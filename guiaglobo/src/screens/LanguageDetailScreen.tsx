@@ -1,37 +1,45 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { Header, CountryCard } from '../components';
+import { useTheme } from '../context/AppContext';
+import { Header, CountryCard, LoadingView } from '../components';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { useCountries } from '../hooks/useCountries';
 
 export default function LanguageDetailScreen() {
   const { state: { colors } } = useTheme();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { languageName } = route.params || { languageName: 'Idioma' };
+  const { languageName } = route.params || { languageName: '' };
 
-  const mockSpeakingCountries = [
-    { id: '1', name: 'Brasil', capital: 'Brasília', population: 214000000, flag: 'https://flagcdn.com/w320/br.png' },
-  ];
+  const { allCountries, loading } = useCountries();
+
+  if (loading) return <LoadingView message="Verificando falantes..." />;
+
+  // Filtra todos os países que contêm o idioma selecionado
+  const speakingCountries = allCountries.filter(country => 
+    country.languages && Object.values(country.languages).includes(languageName)
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title={`Falam ${languageName}`} showBack={true} />
+      <Header title={languageName} showBack={true} />
       
       <View style={styles.info}>
-        <Text style={[styles.text, { color: colors.textPrimary }]}>Países mapeados que adotam o idioma:</Text>
+        <Text style={[styles.text, { color: colors.textPrimary }]}>
+          {speakingCountries.length} países mapeados que adotam o idioma:
+        </Text>
       </View>
 
       <FlatList
-        data={mockSpeakingCountries}
-        keyExtractor={(item) => item.id}
+        data={speakingCountries}
+        keyExtractor={(item) => item.cca2}
         renderItem={({ item }) => (
           <CountryCard
-            name={item.name}
-            capital={item.capital}
+            name={item.name.common}
+            capital={item.capital?.[0] || 'N/A'}
             population={item.population}
-            flagUrl={item.flag}
-            onPress={() => navigation.navigate('CountryDetail', { countryName: item.name })}
+            flagUrl={item.flags.png}
+            onPress={() => navigation.navigate('CountryDetail', { countryName: item.name.common })}
           />
         )}
       />
@@ -40,11 +48,6 @@ export default function LanguageDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  info: {
-    padding: 16,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  info: { padding: 16 },
+  text: { fontSize: 16, fontWeight: '500' },
 });

@@ -6,3 +6,5 @@ export { default as CountryOfTheDay } from './CountryOfTheDay';
 export { default as LanguageDashboard } from './LanguageDashboard';
 export { default as LanguageCard } from './LangaugeCard';
 export { default as FavoriteCard } from './FavoriteCard';
+export { default as LoadingView } from './LoadingView';
+export { default as ErrorView } from './ErrorView';

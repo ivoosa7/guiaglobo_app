@@ -1,43 +1,47 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FlatList, View } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import { Header, SearchBar, FilterChips, CountryCard } from '../components';
+import { useTheme } from '../context/AppContext';
+import { Header, SearchBar, FilterChips, CountryCard, LoadingView, ErrorView } from '../components';
 import { useNavigation } from '@react-navigation/native';
+import { useCountries } from '../hooks/useCountries';
 
 export default function CountriesListScreen() {
   const { state: { colors } } = useTheme();
   const navigation = useNavigation<any>();
-  const [search, setSearch] = useState('');
-  const [continent, setContinent] = useState('Todos');
+  
+  // Chamando o Hook!
+  const { 
+    countries, loading, error, refetch, 
+    searchQuery, setSearch, 
+    selectedContinent, setContinent 
+  } = useCountries();
 
-  // Lista mockada apenas para visualização prévia da rolagem
-  const mockCountries = [
-    { id: '1', name: 'França', capital: 'Paris', population: 67390000, flag: 'https://flagcdn.com/w320/fr.png' },
-    { id: '2', name: 'Alemanha', capital: 'Berlim', population: 83240000, flag: 'https://flagcdn.com/w320/de.png' },
-  ];
+  if (loading) return <LoadingView message="Carregando mapa mundi..." />;
+  if (error) return <ErrorView message={error} onRetry={refetch} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Header title="Explorar Países" />
       
-      <SearchBar value={search} onChangeText={setSearch} />
+      <SearchBar value={searchQuery} onChangeText={setSearch} />
       
       <FilterChips 
-        options={['Todos', 'Américas', 'Europa', 'Ásia', 'África']} 
-        selectedOption={continent} 
+        options={['Todos', 'Américas', 'Europa', 'Ásia', 'África', 'Oceania']} 
+        selectedOption={selectedContinent} 
         onSelect={setContinent} 
       />
 
       <FlatList
-        data={mockCountries}
-        keyExtractor={(item) => item.id}
+        data={countries}
+        keyExtractor={(item) => item.cca2}
+        initialNumToRender={10}
         renderItem={({ item }) => (
           <CountryCard
-            name={item.name}
-            capital={item.capital}
+            name={item.name.common}
+            capital={item.capital?.[0] || 'N/A'}
             population={item.population}
-            flagUrl={item.flag}
-            onPress={() => navigation.navigate('CountryDetail', { countryName: item.name })}
+            flagUrl={item.flags.png}
+            onPress={() => navigation.navigate('CountryDetail', { countryName: item.name.common })}
           />
         )}
       />
