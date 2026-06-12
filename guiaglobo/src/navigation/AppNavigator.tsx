@@ -3,10 +3,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { useTheme, useAuth } from '../context/AppContext';
 
-// Importamos apenas o Drawer (que já carrega as abas inferiores com ele)
-import DrawerNavigator from './DrawerNavigator'
-
-// Importamos apenas as telas que ficam fora do menu de abas
+// Importe o BottomTabs diretamente, ignorando o Drawer
+import BottomTabNavigator from './BottomTabNavigator';
 import LoginScreen from '../screens/LoginScreen';
 import CountryDetailScreen from '../screens/CountryDetailScreen';
 import LanguageDetailScreen from '../screens/LanguageDetailScreen';
@@ -19,22 +17,13 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator 
-        screenOptions={{ 
-          headerShown: false, 
-          contentStyle: { backgroundColor: colors.background } 
-        }}
-      >
+      <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
         {!authState.isAuthenticated ? (
-          // Fluxo Deslogado
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          // Fluxo Logado
           <>
-            {/* A base do app logado é o Menu Lateral */}
-            <Stack.Screen name="MainDrawer" component={DrawerNavigator} />
-            
-            {/* Telas que abrem "por cima" de tudo */}
+            {/* O app logado agora baseia-se 100% nas abas inferiores */}
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
             <Stack.Screen name="CountryDetail" component={CountryDetailScreen} />
             <Stack.Screen name="LanguageDetail" component={LanguageDetailScreen} />
           </>
