@@ -14,10 +14,10 @@ export default function CountryDetailScreen() {
   const { allCountries, loading } = useCountries();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 
-  if (loading) return <LoadingView message="Carregando fronteiras..." />;
+  if (loading) return <LoadingView message="Carregando detalhes..." />;
 
-  // Busca o país exato na lista global
-  const country = allCountries.find(c => c.name.common === countryName);
+  // 1. Busca o país exato usando a sintaxe segura da versão 5
+  const country = allCountries.find(c => (c['names.common'] || c.name?.common) === countryName);
 
   if (!country) {
     return (
@@ -27,25 +27,47 @@ export default function CountryDetailScreen() {
     );
   }
 
-  const favorite = isFavorite(country.name.common);
+  // 2. Extrai o nome de forma segura para usar nos favoritos e no Header
+  const currentName = country['names.common'] || country.name?.common || 'Desconhecido';
+  const favorite = isFavorite(currentName);
 
   const handleToggleFavorite = () => {
     if (favorite) {
-      removeFavorite(country.name.common);
+      removeFavorite(currentName);
     } else {
-      addFavorite(country.name.common);
+      addFavorite(currentName);
     }
+  };
+
+  // 3. Funções auxiliares para blindar a leitura de objetos complexos (Idiomas e Moedas)
+  const formatLanguages = (langs: any) => {
+    if (!langs) return 'N/A';
+    if (Array.isArray(langs)) return langs.map(l => l.name || l.native_name).join(', ');
+    return Object.values(langs).join(', '); // Fallback para o formato antigo
+  };
+
+  const formatCurrencies = (currs: any) => {
+    if (!currs) return 'N/A';
+    if (Array.isArray(currs)) return currs.map(c => `${c.name} (${c.symbol || ''})`).join(', ');
+    return Object.values(currs).map((c: any) => `${c.name} (${c.symbol || ''})`).join(', ');
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Header title={country.name.common} showBack={true} />
+      <Header title={currentName} showBack={true} />
       
       <ScrollView contentContainerStyle={styles.container}>
-        <Image source={{ uri: country.flags.png }} style={styles.flag} />
+        {/* Nova chave para a bandeira da v5 */}
+        <Image 
+          source={{ uri: country['flag.url_png'] || country.flags?.png || 'https://via.placeholder.com/300x200' }} 
+          style={styles.flag} 
+        />
         
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{country.name.official}</Text>
+          {/* Nova chave para o nome oficial da v5 */}
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            {country['names.official'] || country.name?.official || currentName}
+          </Text>
           <TouchableOpacity onPress={handleToggleFavorite} style={styles.favButton}>
             <Ionicons 
               name={favorite ? "star" : "star-outline"} 
@@ -56,19 +78,25 @@ export default function CountryDetailScreen() {
         </View>
         
         <View style={[styles.detailsBox, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-          <Text style={[styles.label, { color: colors.textPrimary }]}>Capital: <Text style={styles.value}>{country.capital?.[0] || 'N/A'}</Text></Text>
-          <Text style={[styles.label, { color: colors.textPrimary }]}>Região: <Text style={styles.value}>{country.region} {country.subregion ? `(${country.subregion})` : ''}</Text></Text>
-          <Text style={[styles.label, { color: colors.textPrimary }]}>População: <Text style={styles.value}>{country.population.toLocaleString('pt-BR')}</Text></Text>
-          <Text style={[styles.label, { color: colors.textPrimary }]}>Área: <Text style={styles.value}>{country.area.toLocaleString('pt-BR')} km²</Text></Text>
-          
           <Text style={[styles.label, { color: colors.textPrimary }]}>
-            Idiomas: <Text style={styles.value}>{country.languages ? Object.values(country.languages).join(', ') : 'N/A'}</Text>
+            Capital: <Text style={styles.value}>{country.capitals?.[0]?.name || country.capitals?.[0] || country.capital?.[0] || 'N/A'}</Text>
+          </Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>
+            Região: <Text style={styles.value}>{country.region || 'N/A'} {country.subregion ? `(${country.subregion})` : ''}</Text>
+          </Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>
+            População: <Text style={styles.value}>{(country.population || 0).toLocaleString('pt-BR')}</Text>
+          </Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>
+            Área: <Text style={styles.value}>{(country['area.kilometers'] || country.area || 0).toLocaleString('pt-BR')} km²</Text>
           </Text>
           
           <Text style={[styles.label, { color: colors.textPrimary }]}>
-            Moedas: <Text style={styles.value}>
-              {country.currencies ? Object.values(country.currencies).map(c => `${c.name} (${c.symbol})`).join(', ') : 'N/A'}
-            </Text>
+            Idiomas: <Text style={styles.value}>{formatLanguages(country.languages)}</Text>
+          </Text>
+          
+          <Text style={[styles.label, { color: colors.textPrimary }]}>
+            Moedas: <Text style={styles.value}>{formatCurrencies(country.currencies)}</Text>
           </Text>
         </View>
       </ScrollView>

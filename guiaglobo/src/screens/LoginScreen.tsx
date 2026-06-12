@@ -56,6 +56,10 @@ export default function LoginScreen() {
         >
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
+
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 16 }}>
+          Colocar qualquer email e senha para fazer login
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );

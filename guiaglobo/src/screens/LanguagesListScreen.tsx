@@ -9,13 +9,13 @@ export default function LanguagesListScreen() {
   const { state: { colors } } = useTheme();
   const navigation = useNavigation<any>();
   
-  // Chamando o Hook!
   const { languages, loading, error, refetch } = useLanguages();
 
   if (loading) return <LoadingView message="Mapeando idiomas globais..." />;
   if (error) return <ErrorView message={error} onRetry={refetch} />;
 
-  const topLanguage = languages.length > 0 ? languages[0] : null;
+  // Trava de segurança para garantir que a lista não é nula antes de pegar o top 1
+  const topLanguage = languages && languages.length > 0 ? languages[0] : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -23,19 +23,22 @@ export default function LanguagesListScreen() {
       
       {topLanguage && (
         <LanguageDashboard 
-          topLanguage={topLanguage.language} 
-          countriesCount={topLanguage.count} 
+          // Adicionando valores padrão de segurança
+          topLanguage={topLanguage.language || 'Desconhecido'} 
+          countriesCount={topLanguage.count || 0} 
         />
       )}
 
       <FlatList
         data={languages}
-        keyExtractor={(item) => item.id}
+        // Usamos o index como plano B caso o hook não gere um ID único
+        keyExtractor={(item, index) => item.id || index.toString()}
         renderItem={({ item }) => (
           <LanguageCard
-            language={item.language}
-            countriesCount={item.count}
-            flagUrl={item.flagUrl}
+            // Blindagem das propriedades visuais do cartão
+            language={item.language || 'Desconhecido'}
+            countriesCount={item.count || 0}
+            flagUrl={item.flagUrl || 'https://via.placeholder.com/150'}
             onPress={() => navigation.navigate('LanguageDetail', { languageName: item.language })}
           />
         )}

@@ -9,7 +9,6 @@ export default function CountriesListScreen() {
   const { state: { colors } } = useTheme();
   const navigation = useNavigation<any>();
   
-  // Chamando o Hook!
   const { 
     countries, loading, error, refetch, 
     searchQuery, setSearch, 
@@ -33,17 +32,26 @@ export default function CountriesListScreen() {
 
       <FlatList
         data={countries}
-        keyExtractor={(item) => item.cca2}
+        // A API v5 mudou o cca2 para 'codes.alpha_2'. Colocamos o index como último recurso de segurança.
+        keyExtractor={(item, index) => item['codes.alpha_2'] || item.cca2 || index.toString()}
         initialNumToRender={10}
-        renderItem={({ item }) => (
-          <CountryCard
-            name={item.name.common}
-            capital={item.capital?.[0] || 'N/A'}
-            population={item.population}
-            flagUrl={item.flags.png}
-            onPress={() => navigation.navigate('CountryDetail', { countryName: item.name.common })}
-          />
-        )}
+        renderItem={({ item }) => {
+          // Extraímos o nome de forma segura para usar tanto no card quanto na navegação
+          const currentName = item['names.common'] || item.name?.common || 'Desconhecido';
+
+          return (
+            <CountryCard
+              // Novas chaves mapeadas para a versão 5
+              name={currentName}
+              capital={item.capitals?.[0]?.name || item.capitals?.[0] || item.capital?.[0] || 'N/A'}
+              population={item.population || 0}
+              flagUrl={item['flag.url_png'] || item.flags?.png || 'https://via.placeholder.com/150'}
+              
+              // Passamos o currentName limpo para a tela de Detalhes não se perder
+              onPress={() => navigation.navigate('CountryDetail', { countryName: currentName })}
+            />
+          );
+        }}
       />
     </View>
   );
